@@ -17,7 +17,7 @@ def get_nyt_10(my_url):
     soup = soupify(my_url)
     headline_list = soup.find_all("h2", class_="story-heading")
     for headline in headline_list[:10]:
-        print(headline.get_text())
+        print(headline.find("a").get_text().strip())
 
 get_nyt_10("http://www.nytimes.com")
 
@@ -56,3 +56,13 @@ print('\n*********** PROBLEM 4 ***********')
 print("UMSI faculty directory emails\n")
 
 ### Your Problem 4 solution goes here
+def get_faculty_mail(my_url):
+    soup = soupify(my_url)
+    base_url = "https://www.si.umich.edu"
+    full_url_list = list()
+    # if soup.find_all
+    pager_link = soup.find(attrs={"title":"Go to next page"})
+    full_url_list.append(base_url + pager_link["href"])
+    print(full_url_list)
+
+# get_faculty_mail("https://www.si.umich.edu/directory?field_person_firstname_value=&field_person_lastname_value=&rid=4")
