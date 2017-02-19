@@ -1,12 +1,15 @@
 #proj2.py
 from bs4 import BeautifulSoup
 import requests
+import re
 
+# function to convert a given url into a bs4 obj
 def soupify(my_url):
     # turns a given link to a soup obj
-    r = requests.get(my_url)
+    r = requests.get(my_url, headers={'User-Agent': 'Mozilla/5.0'})
     soup = BeautifulSoup(r.text, "html.parser")
     return soup
+
 
 #### Problem 1 ####
 print('\n*********** PROBLEM 1 ***********')
@@ -17,7 +20,7 @@ def get_nyt_10(my_url):
     soup = soupify(my_url)
     headline_list = soup.find_all("h2", class_="story-heading")
     for headline in headline_list[:10]:
-        print(headline.find("a").get_text().strip())
+        print(headline.get_text().strip())
 
 get_nyt_10("http://www.nytimes.com")
 
@@ -56,13 +59,54 @@ print('\n*********** PROBLEM 4 ***********')
 print("UMSI faculty directory emails\n")
 
 ### Your Problem 4 solution goes here
-def get_faculty_mail(my_url):
-    soup = soupify(my_url)
-    base_url = "https://www.si.umich.edu"
-    full_url_list = list()
-    # if soup.find_all
-    pager_link = soup.find(attrs={"title":"Go to next page"})
-    full_url_list.append(base_url + pager_link["href"])
-    print(full_url_list)
 
-# get_faculty_mail("https://www.si.umich.edu/directory?field_person_firstname_value=&field_person_lastname_value=&rid=4")
+# function to actually get the faculty member's email
+def parse_details_email(details_page):
+    soup = soupify(details_page)
+    return soup.find_all("a", href=re.compile("^mailto:"))[0].get_text()
+
+
+# function to iterate through the people on the page get the link to their details page
+def get_faculty_page(my_url):
+    base_url = "https://www.si.umich.edu"
+
+    nodes_list = list()
+
+    soup = soupify(my_url)
+    directory_section = soup.find("div", class_="view-directory")
+    person_nodes = directory_section.find_all("a", href=re.compile("^/node/"))
+
+    for rel_url in person_nodes:
+        nodes_list.append(base_url + rel_url["href"])
+
+    return nodes_list
+
+#function to get all the pages of people
+def dir_paging(my_url, url_list=None):
+    base_url = "https://www.si.umich.edu"
+    soup = soupify(my_url)
+
+    if url_list == None:
+        url_list = list()
+
+    url_list.append(my_url)
+
+    #checks to see if there is a anchor value on the pager class, if there is
+    #create the full url and add it to the list
+    check_children = soup.find("li", class_="pager-next").findChildren()
+    if len(check_children) > 0:
+        dir_paging(base_url + check_children[0]["href"], url_list)
+
+    return url_list
+
+def get_all_emails(starting_url):
+
+    count = 1
+    for page in dir_paging(starting_url):
+        node_list = get_faculty_page(page)
+        for node in node_list:
+            print("{} {}".format(count, parse_details_email(node)))
+            count += 1
+
+
+get_all_emails("https://www.si.umich.edu/directory?field_person_firstname_value=&field_person_lastname_value=&rid=4")
