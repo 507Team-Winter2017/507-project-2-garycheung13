@@ -4,9 +4,9 @@ import requests
 import re
 
 # function to convert a given url into a bs4 obj
-def soupify(my_url):
+def soupify(my_url, header={'User-Agent': 'Mozilla/5.0'}):
     # turns a given link to a soup obj
-    r = requests.get(my_url, headers={'User-Agent': 'Mozilla/5.0'})
+    r = requests.get(my_url, headers=header)
     soup = BeautifulSoup(r.text, "html.parser")
     return soup
 
@@ -62,7 +62,7 @@ print("UMSI faculty directory emails\n")
 
 # function to actually get the faculty member's email
 def parse_details_email(details_page):
-    soup = soupify(details_page)
+    soup = soupify(details_page, header={"User-Agent": "SI_CLASS"})
     return soup.find_all("a", href=re.compile("^mailto:"))[0].get_text()
 
 
@@ -72,7 +72,7 @@ def get_faculty_page(my_url):
 
     nodes_list = list()
 
-    soup = soupify(my_url)
+    soup = soupify(my_url, header={"User-Agent": "SI_CLASS"})
     directory_section = soup.find("div", class_="view-directory")
     person_nodes = directory_section.find_all("a", href=re.compile("^/node/"))
 
@@ -84,7 +84,7 @@ def get_faculty_page(my_url):
 #function to get all the pages of people
 def dir_paging(my_url, url_list=None):
     base_url = "https://www.si.umich.edu"
-    soup = soupify(my_url)
+    soup = soupify(my_url, header={"User-Agent": "SI_CLASS"})
 
     if url_list == None:
         url_list = list()
